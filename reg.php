@@ -80,13 +80,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Validate Password and Confirm Password
-    if (empty($_POST["password"])) {
+    if (isset($_POST["password"]) && empty($_POST["password"])) {
         $errors['password'] = "Password is required";
     } else {
         $password = sanitizeInput($_POST["password"]);
     }
 
-    if (empty($_POST["confirmPassword"])) {
+    if (isset($_POST["confirmPassword"]) && empty($_POST["confirmPassword"])) {
         $errors['confirmPassword'] = "Confirming your password is required";
     } else {
         $confirmPassword = sanitizeInput($_POST["confirmPassword"]);
@@ -106,13 +106,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($conn->query($sql) === TRUE) {
                 echo "New record created successfully";
             } else {
-                echo "Error: " . $sql . "<br>" . $conn->error;
+                echo "Error: " . $conn->error;
             }
         }
 
         // Update Operation
         if (isset($_POST['action']) && $_POST['action'] == 'update') {
-            $sql = "UPDATE students SET username='$username', email='$email', phone='$phone' WHERE id='$id'";
+            $sql = "UPDATE students SET username='$username', email='$email', phone='$phone', dob='$dob', gender='$gender', address='$address', course='$course' WHERE id='$id'";
 
             if ($conn->query($sql) === TRUE) {
                 echo "Record updated successfully";
@@ -136,7 +136,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $sql = "SELECT * FROM students";
         $result = $conn->query($sql);
 
-        if ($result->num_rows > 0) {
+        if ($result === FALSE) {
+            echo "Error: " . $conn->error;
+        } elseif ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 echo "ID: " . $row["id"] . " - Name: " . $row["username"] . " - Email: " . $row["email"] . "<br>";
             }
@@ -154,18 +156,98 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Registration Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        input[type="password"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .error {
+            color: red;
+            font-size: 0.875em;
+            margin-bottom: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 10px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h2>Student Registration Form</h2>
         <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-            <input type="hidden" name="action" value="create"> <!-- Add this hidden input to specify the action -->
+            <!-- Hidden input to specify the action -->
+            <input type="hidden" name="action" id="form-action" value="create">
 
             <label for="id">Student ID:</label>
             <input type="text" id="id" name="id" required>
@@ -207,21 +289,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </select>
             <span class="error"><?php echo $errors['course'] ?? ''; ?></span>
 
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password">
+            <span class="error"><?php echo $errors['password'] ?? ''; ?></span>
+
+            <label for="confirmPassword">Confirm Password:</label>
+            <input type="password" id="confirmPassword" name="confirmPassword">
+            <span class="error"><?php echo $errors['confirmPassword'] ?? ''; ?></span>
+
             <label>
                 <input type="checkbox" id="terms" name="terms" required> I agree to the terms and conditions
             </label>
             <span class="error"><?php echo $errors['terms'] ?? ''; ?></span>
 
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
-            <span class="error"><?php echo $errors['password'] ?? ''; ?></span>
-
-            <label for="confirmPassword">Confirm Password:</label>
-            <input type="password" id="confirmPassword" name="confirmPassword" required>
-            <span class="error"><?php echo $errors['confirmPassword'] ?? ''; ?></span>
-
-            <button type="submit">Register</button>
+            <button type="submit" onclick="document.getElementById('form-action').value='create';">Register</button>
+            <button type="submit" onclick="document.getElementById('form-action').value='update';">Update</button>
+            <button type="submit" onclick="document.getElementById('form-action').value='delete';">Delete</button>
         </form>
     </div>
 </body>
 </html>
+
